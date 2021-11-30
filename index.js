@@ -1,33 +1,47 @@
 /* eslint-disable no-unused-vars */
-const { Client, Intents, Collection,  } = require('discord.js');
-const client = new Client({ intents: [Intents.FLAGS.GUILDS] });
-const { Routes } = require("discord-api-types/v9");
-const { REST } = require("discord-api-types/rest");
+const { Client, Intents, Collection, } = require('discord.js')
+const client = new Client({ intents: [Intents.FLAGS.GUILDS] })
+const fs = require("fs")
+const {
+    REST
+} = require('@discordjs/rest')
+const {
+    Routes
+} = require('discord-api-types/v9')
+
+const dotenv = require('dotenv');
+dotenv.config();
+const TOKEN = process.env['BOT_TOKEN'];
+
+const cmdfiles = fs.readdirSync('./interactions/').filter(file => file.endsWith('.js'))
+//const TEST_GUILD_ID = process.env['TEST_GUILD_ID']
+const TEST_GUILD_ID = ''
 const commands = [];
-const fs = require("fs");
-// Load  cmd
-const commandDir = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
-require("dotenv").config();
-const dotenv = require("dotenv");
-const envFILE = dotenv.config();
+
+// Creating a collection for commands in client
 client.commands = new Collection();
-const TEST_GUILD_ID = envFILE.parsed['TEST_GUILD_ID'];
 
+for (const file of cmdfiles) {
+    const command = require(`./interactions/${file}`)
+    commands.push(command.data.toJSON())
+    debug(`Registering ${file}`)
+    client.commands.set(command.data.name, command)
+    debug(`Found ${command.data.name} `)
+}
 
-
-
-for (const file of commandDir) {
-    const command = require(`./commands/${file}`);
-    commands.push(command.data.toJSON());
-    client.commands.set(command.data.name, command);
+function debug(txt) {
+    console.log('Debug: '+txt)    
 }
 
 client.once('ready', () => {
     const CLIENT_ID = client.user.id;
-    console.log('Starting Mocci Discord Bot....');
-   /* const rest = new REST({
+    console.log('Starting Mocci Discord Bot....')
+    console.log(`Client ID: ${CLIENT_ID}`)
+    
+    const rest = new REST({
         version: '9'
-    }).setToken(process.env.BOT_TOKEN);
+    }).setToken(TOKEN);
+
     (async () => {
         try {
             if (!TEST_GUILD_ID) {
@@ -48,12 +62,23 @@ client.once('ready', () => {
         } catch (error) {
             if (error) console.error(error);
         }
-    })();*/
+    })();
 
 });
 
+client.on('interactionCreate', async interaction => {
+    debug('New Interaction')
+    if (!interaction.isCommand()) return;
+    debug('Detected as Command')
+    const command = client.commands.get(interaction.commandName);
+    if (!command) return;
+    try {
+        await command.execute(interaction);
+    } catch (error) {
+        if (error) console.error(error);
+        await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+    }
+});
 
-
-
-client.login(process.env.BOT_TOKEN);
+client.login(TOKEN);
 

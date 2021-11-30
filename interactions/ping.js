@@ -24,9 +24,9 @@ module.exports = {
 						
 						.addFields(
 							{name: 'Hostname', value: 'Current: '+hostname},
-							{name: 'Platform', value: 'Current:'+platform},
+							{name: 'Platform', value: 'Current:'+platform.toString},
 							{name: 'Version', value: 'Current:'+ver},
-							{name: 'Current Processing Time', value: 'Current:'+time}
+							{name: 'Current Processing Time', value: 'Current:'+time.toString}
 						);
 
 

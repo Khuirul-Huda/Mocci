@@ -18,7 +18,7 @@ module.exports = {
 			.setTitle('About Mocci Bot')
 			.setDescription('AFAIK Mocci Bot is under development')
 			.setImage('https://i.postimg.cc/XvQVPfGP/free-anime-image.jpg')
-
+			.setFooter('yay')
 			.addFields(
 				{ name: 'Hostname', value: 'Current\t' + hostname },
 				{ name: 'Platform', value: 'Current\t' + platform.toString },

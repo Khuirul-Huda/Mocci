@@ -1,0 +1,28 @@
+{
+  "name": "id.my.khuirulhuda.fun.mocci",
+  "version": "1.0.0",
+  "description": "Multipurpose Discord Bot",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "discord",
+    "bot",
+    "fun"
+  ],
+  "author": "Khuirul-Huda",
+  "license": "ISC",
+  "dependencies": {
+    "@discordjs/builders": "^0.8.2",
+    "@discordjs/rest": "^0.1.0-canary.0",
+    "ascii-table": "^0.0.9",
+    "discord-api-types": "^0.25.0",
+    "discord.js": "^13.3.1",
+    "dotenv": "^10.0.0",
+    "slash-create": "^4.3.1"
+  },
+  "devDependencies": {
+    "eslint": "^8.3.0"
+  }
+}

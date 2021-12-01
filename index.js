@@ -27,18 +27,18 @@ for (const file of cmdfiles) {
     commands.push(command.data.toJSON())
     debug(`Registering ${file}`)
     client.commands.set(command.data.name, command)
-    
+
 }
 
 function debug(txt) {
-    console.log('Debug: '+txt)    
+    console.log('Debug: ' + txt)
 }
 
 client.once('ready', () => {
     const CLIENT_ID = client.user.id;
     console.log('Starting Mocci Discord Bot....')
     console.log(`Client ID: ${CLIENT_ID}`)
-    
+
     const rest = new REST({
         version: '9'
     }).setToken(TOKEN);
@@ -48,15 +48,15 @@ client.once('ready', () => {
             if (!TEST_GUILD_ID) {
                 await rest.put(
                     Routes.applicationCommands(CLIENT_ID), {
-                        body: commands
-                    },
+                    body: commands
+                },
                 );
                 debug('Successfully registered application commands globally');
             } else {
                 await rest.put(
                     Routes.applicationGuildCommands(CLIENT_ID, TEST_GUILD_ID), {
-                        body: commands
-                    },
+                    body: commands
+                },
                 );
                 debug('Successfully registered application commands for development guild');
             }
@@ -71,7 +71,7 @@ client.on('interactionCreate', async interaction => {
     if (!interaction.isCommand()) return
     const command = client.commands.get(interaction.commandName)
     if (!command) return
-    debug(`New Interaction ${command}`)
+    debug(`New Interaction Accepted`)
     try {
         await command.execute(interaction)
     } catch (error) {

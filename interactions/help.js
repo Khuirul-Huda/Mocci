@@ -5,6 +5,6 @@ module.exports = {
 		.setName('help')
 		.setDescription('Shows all command'),
 	async execute(interaction) {
-		interaction.reply({ content: 'under development' })
+		interaction.reply({ content: 'Tunggu.... Kamu cantik deh', ephemeral: true })
 	}
 };

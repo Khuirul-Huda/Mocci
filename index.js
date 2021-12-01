@@ -9,9 +9,10 @@ const {
     Routes
 } = require('discord-api-types/v9')
 
-const dotenv = require('dotenv');
+const dotenv = require('dotenv')
 dotenv.config();
-const TOKEN = process.env['BOT_TOKEN'];
+const TOKEN = process.env['BOT_TOKEN']
+const isDebug = process.env['DEBUG_MODE']
 
 const cmdfiles = fs.readdirSync('./interactions/').filter(file => file.endsWith('.js'))
 //const TEST_GUILD_ID = process.env['TEST_GUILD_ID']
@@ -26,7 +27,7 @@ for (const file of cmdfiles) {
     commands.push(command.data.toJSON())
     debug(`Registering ${file}`)
     client.commands.set(command.data.name, command)
-    debug(`Found ${command.data.name} `)
+    
 }
 
 function debug(txt) {
@@ -50,14 +51,14 @@ client.once('ready', () => {
                         body: commands
                     },
                 );
-                console.log('Successfully registered application commands globally');
+                debug('Successfully registered application commands globally');
             } else {
                 await rest.put(
                     Routes.applicationGuildCommands(CLIENT_ID, TEST_GUILD_ID), {
                         body: commands
                     },
                 );
-                console.log('Successfully registered application commands for development guild');
+                debug('Successfully registered application commands for development guild');
             }
         } catch (error) {
             if (error) console.error(error);
@@ -67,18 +68,18 @@ client.once('ready', () => {
 });
 
 client.on('interactionCreate', async interaction => {
-    debug('New Interaction')
-    if (!interaction.isCommand()) return;
-    debug('Detected as Command')
-    const command = client.commands.get(interaction.commandName);
-    if (!command) return;
+    if (!interaction.isCommand()) return
+    const command = client.commands.get(interaction.commandName)
+    if (!command) return
+    debug(`New Interaction ${command}`)
     try {
-        await command.execute(interaction);
+        await command.execute(interaction)
     } catch (error) {
-        if (error) console.error(error);
-        await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+        if (error) console.error(error)
+        await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true })
     }
 });
 
+debug('Logging in...')
 client.login(TOKEN);
 

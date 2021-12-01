@@ -11,19 +11,9 @@ const cputotal = os.cpus().length
 const model = cpus[0].model
 
 let uptime = new Date(os.uptime * 1000).toISOString().substr(11, 8)
-let freemem = prettySize(os.freemem())
-let totalmem = prettySize(os.totalmem())
+let freemem = `${os.freemem()} Bytes`
+let totalmem = `${os.totalmem()} Bytes`
 let memoryinfo = `${freemem} / ${totalmem}`
-
-//Thanks to all people in https://gist.github.com/lanqy/5193417
-function prettySize(bytes, separator = '.', postFix = '') {
-	if (bytes) {
-		const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB']
-		const i = Math.min(parseInt(Math.floor(Math.log(bytes) / Math.log(1024)), 10), sizes.length - 1)
-		return `${(bytes / (1024 ** 1)).toFixed(i ? 1 : 0)}${separator}${sizes[i]}${postFix}`
-	}
-	return 'n/a'
-}
 
 module.exports = {
 	data: new SlashCommandBuilder()

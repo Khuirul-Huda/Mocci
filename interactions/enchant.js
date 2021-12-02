@@ -24,7 +24,7 @@ module.exports = {
 			.setTitle('Result')
 			.setDescription(translatedText)
 			.setColor('GREEN')
-			.setFooter('2022 Mocci Bot')
+			
 
 		interaction.reply({ content: "Here's translated text. Please note that currently we can't include number for translations", ephemeral: hide , embeds: [embed]})
 	}

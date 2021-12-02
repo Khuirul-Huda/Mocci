@@ -1,12 +1,18 @@
 /* eslint-disable no-unused-vars */
 const { SlashCommandBuilder, SlashCommandStringOption } = require('@discordjs/builders');
+const Enchant = require("enchantment-table")
 
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('enchant')
-		.setDescription('Translates any text to enchanting table language'),
-        //.addStringOption(new SlashCommandStringOption()),
+		.setDescription('Translates any text to enchanting table language')
+		.addStringOption(option => option.setName("text")
+			.setRequired(true)
+			.setDescription("Text to translate")
+		),
 	async execute(interaction) {
-		interaction.reply({ content: 'Tunggu.... Kamu cantik deh', ephemeral: true })
+		let untranslatedText = interaction.options.data.find(arg => arg.name === 'text').value
+		let translatedText = Enchant.translate(untranslatedText)
+		interaction.reply({ content: translatedText, ephemeral: false })
 	}
 };

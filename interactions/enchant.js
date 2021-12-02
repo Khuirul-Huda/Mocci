@@ -1,5 +1,6 @@
 /* eslint-disable no-unused-vars */
 const { SlashCommandBuilder, SlashCommandStringOption } = require('@discordjs/builders');
+const { MessageEmbed } = require('discord.js');
 const Enchant = require("enchantment-table")
 let hide = false
 module.exports = {
@@ -18,7 +19,13 @@ module.exports = {
 			let translatedText = "We need something to reply"
 			let hide = true
 		}
+		
+		const embed = new MessageEmbed()
+			.setTitle('Result')
+			.setDescription(translatedText)
+			.setColor('GREEN')
+			.setFooter('2022 Mocci Bot')
 
-		interaction.reply({ content: translatedText, ephemeral: hide })
+		interaction.reply({ content: "Here's translated text. Please note that currently we can't include number for translations", ephemeral: hide , embed: embed})
 	}
 };

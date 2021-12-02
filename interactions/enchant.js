@@ -25,7 +25,6 @@ module.exports = {
 			.setDescription(translatedText)
 			.setColor('GREEN')
 			
-
 		interaction.reply({ content: "Here's translated text. Please note that currently we can't include number for translations", ephemeral: hide , embeds: [embed]})
 	}
 };

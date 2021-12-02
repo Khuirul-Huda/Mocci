@@ -2,24 +2,16 @@
 const { Client, Intents, Collection, } = require('discord.js')
 const client = new Client({ intents: [Intents.FLAGS.GUILDS] })
 const fs = require("fs")
-const {
-    REST
-} = require('@discordjs/rest')
-const {
-    Routes
-} = require('discord-api-types/v9')
-
+const { REST } = require('@discordjs/rest')
+const { Routes } = require('discord-api-types/v9')
 const dotenv = require('dotenv')
 dotenv.config();
 const TOKEN = process.env['BOT_TOKEN']
 const isDebug = process.env['DEBUG_MODE']
-
 const cmdfiles = fs.readdirSync('./interactions/').filter(file => file.endsWith('.js'))
-//const TEST_GUILD_ID = process.env['TEST_GUILD_ID']
 const TEST_GUILD_ID = ''
 const commands = [];
 
-// Creating a collection for commands in client
 client.commands = new Collection();
 
 for (const file of cmdfiles) {
@@ -27,7 +19,6 @@ for (const file of cmdfiles) {
     commands.push(command.data.toJSON())
     debug(`Registering ${file}`)
     client.commands.set(command.data.name, command)
-
 }
 
 function debug(txt) {
@@ -38,7 +29,6 @@ client.once('ready', () => {
     const CLIENT_ID = client.user.id;
     console.log('Starting Mocci Discord Bot....')
     console.log(`Client ID: ${CLIENT_ID}`)
-
     const rest = new REST({
         version: '9'
     }).setToken(TOKEN);
@@ -64,11 +54,8 @@ client.once('ready', () => {
             if (error) console.error(error);
         }
     })();
-    console.log(`Listening on ${client.users.size} users, in ${client.channels.size} channels of ${client.guilds.size} guilds.`); 
-    client.user.setActivity('UNGE', { type: 'STREAMING', name: 'unge', url: 'https://go.khuirulhuda.my.id/discord'})
+    client.user.setActivity('UNGE', { type: 'STREAMING', name: 'unge', url: 'https://go.khuirulhuda.my.id/discord' })
 });
-
-client.on('typingStart', (channel, user) => debug(`${user.username} started typing on a channel`))
 
 client.on('interactionCreate', async interaction => {
     if (!interaction.isCommand()) return
@@ -85,4 +72,3 @@ client.on('interactionCreate', async interaction => {
 
 debug('Logging in...')
 client.login(TOKEN);
-

@@ -15,14 +15,22 @@ module.exports = {
 		.setDescription('Show detailed Mocci Bot Info'),
 
 	async execute(interaction) {
-		const uptime = new Date(os.uptime * 1000).toISOString().substr(11, 8)
+		//uptime os
+		let totalSeconds = os.uptime();
+		let days = Math.floor(totalSeconds / 86400)
+		totalSeconds %= 86400
+		let hours = Math.floor(totalSeconds / 3600)
+		totalSeconds %= 3600
+		let minutes = Math.floor(totalSeconds / 60)
+		let seconds = Math.floor(totalSeconds % 60)
+
+		const uptime = `${days} Days ${hours} Hours ${minutes} Minutes ${seconds} Seconds`
 		const freemem = `${os.freemem()}`
 		const totalmem = `${os.totalmem()} Bytes`
 		const memoryinfo = `${freemem} / ${totalmem}`
-
 		const time = Date.now() - interaction.createdTimestamp
-		const sysinfo = `**Hostname:** ${hostname}\n**Platform:** ${platform}\n**Header:** ${headerversion}\n**Cpu:** ${model} x${cputotal}\n**Memory:** ${memoryinfo} \n**Uptime:** ${uptime}\n\nDelay Interact: ${time} ms\n Source code: [here](https://github.com/Khuirul-Huda/Mocci)`
-
+		const sysinfo = `**Hostname:** ${hostname}\n**Platform:** ${platform}\n**Header:** ${headerversion}\n**CPU:** ${model} x${cputotal}\n**Memory:** ${memoryinfo} \n**System Uptime:** ${uptime}\n\nDelay Interact: ${time} ms\n Source code: [here](https://github.com/Khuirul-Huda/Mocci)`
+		
 		const about = new MessageEmbed()
 			.setColor('#31ff08')
 			.setTitle('About')

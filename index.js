@@ -5,6 +5,7 @@ const fs = require("fs")
 const { REST } = require('@discordjs/rest')
 const { Routes } = require('discord-api-types/v9')
 const dotenv = require('dotenv')
+const anim = require('chalk-animation')
 dotenv.config();
 const TOKEN = process.env['BOT_TOKEN']
 const isDebug = process.env['DEBUG_MODE']
@@ -21,14 +22,10 @@ for (const file of cmdfiles) {
     client.commands.set(command.data.name, command)
 }
 
-function debug(txt) {
-    console.log('Debug: ' + txt)
-}
 
 client.once('ready', () => {
     const CLIENT_ID = client.user.id;
-    console.log('Starting Mocci Discord Bot....')
-    console.log(`Client ID: ${CLIENT_ID}`)
+    log('Bot ready...', 2)
     const rest = new REST({
         version: '9'
     }).setToken(TOKEN);
@@ -41,20 +38,22 @@ client.once('ready', () => {
                     body: commands
                 },
                 );
-                debug('Successfully registered application commands globally');
+                debug('Successfully registered application commands globally')
+               
             } else {
                 await rest.put(
                     Routes.applicationGuildCommands(CLIENT_ID, TEST_GUILD_ID), {
                     body: commands
                 },
                 );
-                debug('Successfully registered application commands for development guild');
+                debug('Successfully registered application commands for development guild')
             }
         } catch (error) {
             if (error) console.error(error);
         }
     })();
     client.user.setActivity('UNGE', { type: 'STREAMING', name: 'unge', url: 'https://go.khuirulhuda.my.id/discord' })
+    anim.rainbow('Listening to interactions.....')
 });
 
 client.on('interactionCreate', async interaction => {
@@ -68,7 +67,32 @@ client.on('interactionCreate', async interaction => {
         if (error) console.error(error)
         await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true })
     }
-});
+})
 
-debug('Logging in...')
+client.on('messageDelete', message => {
+debug(`Message deleted: ${message}`)
+})
+
+//Logging
+function debug(txt) {
+    log(txt, 1)
+}
+
+/**
+ * 
+ * @param {string} string - Message
+ * @param {number} level - 1 = debug, 2 = info, 3 = warning, 4 = critical
+ */
+
+function log(message, level) {
+    const colorize = require('colors')
+    if (level > 4 || level <= 0 ) return
+    const prefix = (level == 1) ? '[DEBUG]' : (level == 2 ) ? '[INFO]' : (level == 3 ) ? '[WARN]' : '[CRITICAL]'
+    const separator = ' '
+    const output = prefix + separator + message
+
+    console.log((level == 1) ? output.white : (level == 2 ) ? output.blue : (level == 3 ) ? output.yellow : output.red)
+}
+
+anim.rainbow('Logging in............')
 client.login(TOKEN);

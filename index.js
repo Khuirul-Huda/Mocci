@@ -8,10 +8,10 @@ const dotenv = require('dotenv')
 const anim = require('chalk-animation')
 dotenv.config();
 const TOKEN = process.env['BOT_TOKEN']
-const isDebug = process.env['DEBUG_MODE']
 const cmdfiles = fs.readdirSync('./interactions/').filter(file => file.endsWith('.js'))
 const TEST_GUILD_ID = ''
 const commands = [];
+const isdebug = process.env['DEBUG']
 
 client.commands = new Collection();
 
@@ -39,7 +39,7 @@ client.once('ready', () => {
                 },
                 );
                 debug('Successfully registered application commands globally')
-               
+
             } else {
                 await rest.put(
                     Routes.applicationGuildCommands(CLIENT_ID, TEST_GUILD_ID), {
@@ -61,6 +61,7 @@ client.on('interactionCreate', async interaction => {
     const command = client.commands.get(interaction.commandName)
     if (!command) return
     debug(`New Interaction Accepted`)
+    anim.rainbow('Waiting for interactions....')
     try {
         await command.execute(interaction)
     } catch (error) {
@@ -70,7 +71,7 @@ client.on('interactionCreate', async interaction => {
 })
 
 client.on('messageDelete', message => {
-debug(`Message deleted: ${message}`)
+    debug(`Message deleted: ${message}`)
 })
 
 //Logging
@@ -86,12 +87,13 @@ function debug(txt) {
 
 function log(message, level) {
     const colorize = require('colors')
-    if (level > 4 || level <= 0 ) return
-    const prefix = (level == 1) ? '[DEBUG]' : (level == 2 ) ? '[INFO]' : (level == 3 ) ? '[WARN]' : '[CRITICAL]'
+    if (level > 4 || level <= 0) return
+    const prefix = (level == 1) ? '[DEBUG]' : (level == 2) ? '[INFO]' : (level == 3) ? '[WARN]' : '[CRITICAL]'
     const separator = ' '
     const output = prefix + separator + message
+    if (level == 1 && isdebug == 0) return
 
-    console.log((level == 1) ? output.white : (level == 2 ) ? output.blue : (level == 3 ) ? output.yellow : output.red)
+    console.log((level == 1) ? output.white : (level == 2) ? output.blue : (level == 3) ? output.yellow : output.red)
 }
 
 anim.rainbow('Logging in............')

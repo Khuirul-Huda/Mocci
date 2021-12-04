@@ -16,7 +16,7 @@ module.exports = {
         const browser = await engine.launch()
         const context = browser.createIncognitoBrowserContext()
         const render = (await context).newPage()
-        await (await render).goto(url)
+        await (await render).goto(url).catch(err => interaction.editReply({content: 'Something went wrong'}))
         const pic = await (await render).screenshot()
        const y = (await browser).close()
          interaction.editReply({content: "nih jadi",  files: [pic], ephemeral: false})

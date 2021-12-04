@@ -12,7 +12,7 @@ module.exports = {
 
      async execute(interaction){
         const url = interaction.options.data.find(arg => arg.name === 'url').value
-        interaction.reply({content: 'Bentar lagi masak', ephemeral: true})
+        interaction.reply({content: 'Bentar lagi masak', ephemeral: false})
         const browser = await engine.launch()
         const context = browser.createIncognitoBrowserContext()
         const render = (await context).newPage()

@@ -12,14 +12,13 @@ module.exports = {
 
      async execute(interaction){
         const url = interaction.options.data.find(arg => arg.name === 'url').value
-        
+        interaction.reply({content: 'Bentar lagi masak', ephemeral: true})
         const browser = await engine.launch()
         const context = browser.createIncognitoBrowserContext()
         const render = (await context).newPage()
         await (await render).goto(url)
-        const pic = (await render).screenshot()
-      
-         interaction.reply({content: pic})
-        
+        const pic = await (await render).screenshot()
+       const y = (await browser).close()
+         interaction.editReply({content: "nih jadi",  files: [pic], ephemeral: false})
 }  
 }

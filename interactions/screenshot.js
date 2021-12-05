@@ -1,6 +1,6 @@
 const { SlashCommandBuilder } = require('@discordjs/builders')
 const engine = require('puppeteer')
-
+let msg = "Ini kak"
 module.exports = {
     data: new SlashCommandBuilder()
             .setName('screenshot')
@@ -16,9 +16,10 @@ module.exports = {
         const browser = await engine.launch()
         const context = browser.createIncognitoBrowserContext()
         const render = (await context).newPage()
-        await (await render).goto(url).catch(err => interaction.editReply({content: 'Something went wrong'}))
+        await (await render).goto(url).catch(err => msg = "Ini Kak")
         const pic = await (await render).screenshot()
        const y = (await browser).close()
-         interaction.editReply({content: "nih jadi",  files: [pic], ephemeral: false})
+         await interaction.editReply({content: msg,  files: [pic], ephemeral: false})
+	
 }  
 }

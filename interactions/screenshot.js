@@ -25,6 +25,8 @@ const args_n = [
   '--disable-setuid-sandbox',
   '--disable-speech-api',
   '--disable-sync',
+  '--single-process',
+  '--disable-gpu',
   '--hide-scrollbars',
   '--ignore-gpu-blacklist',
   '--metrics-recording-only',
@@ -60,8 +62,8 @@ module.exports = {
         const url = interaction.options.data.find(arg => arg.name === 'url').value
         interaction.reply({content: 'Bentar lagi masak', ephemeral: false})
         const browser = await engine.launch({headless: true, args: args_n, userDataDir: './puppeteer/temp'})
-        const context = browser.createIncognitoBrowserContext()
-        const render = (await context).newPage()
+        //const context = browser.createIncognitoBrowserContext()
+        const render = (await browser).newPage()
 await (await render).setRequestInterception(true);
 
 (await render).on('request', (request) => {

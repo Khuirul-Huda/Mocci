@@ -53,7 +53,7 @@ client.once('ready', () => {
         }
     })();
     client.user.setActivity('UNGE', { type: 'STREAMING', name: 'unge', url: 'https://go.khuirulhuda.my.id/discord' })
-    anim.rainbow('Listening to interactions.....')
+    log('Listening to interactions.....', 2)
 });
 
 client.on('interactionCreate', async interaction => {
@@ -61,7 +61,7 @@ client.on('interactionCreate', async interaction => {
     const command = client.commands.get(interaction.commandName)
     if (!command) return
     debug(`New Interaction Accepted`)
-    anim.rainbow('Waiting for interactions....')
+    log('Waiting for interactions....', 2)
     try {
         await command.execute(interaction)
     } catch (error) {

@@ -4,6 +4,7 @@ const client = new Client({ intents: [Intents.FLAGS.GUILDS] })
 const fs = require("fs")
 const { REST } = require('@discordjs/rest')
 const { Routes } = require('discord-api-types/v9')
+const { MocciLogging } =require('./utils/moccilogger')
 const dotenv = require('dotenv')
 const anim = require('chalk-animation')
 dotenv.config();
@@ -21,7 +22,6 @@ for (const file of cmdfiles) {
     debug(`Registering ${file}`)
     client.commands.set(command.data.name, command)
 }
-
 
 client.once('ready', () => {
     const CLIENT_ID = client.user.id;
@@ -69,28 +69,12 @@ client.on('interactionCreate', async interaction => {
         await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true })
     }
 })
-
-//Logging
-function debug(txt) {
-    log(txt, 1)
+//Aliases
+function debug(msg) {
+MocciLogging.log(msg, MocciLogging.DEBUG)
 }
-
-/**
- * 
- * @param {string} string - Message
- * @param {number} level - 1 = debug, 2 = info, 3 = warning, 4 = critical
- */
-
-function log(message, level) {
-    const colorize = require('colors')
-    if (level > 4 || level <= 0) return
-    const prefix = (level == 1) ? '[DEBUG]' : (level == 2) ? '[INFO]' : (level == 3) ? '[WARN]' : '[CRITICAL]'
-    const separator = ' '
-    const output = prefix + separator + message
-    if (level == 1 && isdebug == 0) return
-
-    console.log((level == 1) ? output.white : (level == 2) ? output.blue : (level == 3) ? output.yellow : output.red)
+function log(msg, int) {
+MocciLogging.log(msg, int)
 }
-
 anim.rainbow('Logging in............')
 client.login(TOKEN);

@@ -1,6 +1,7 @@
 const { SlashCommandBuilder } = require('@discordjs/builders')
 const { MessageEmbed } = require('discord.js')
 const os = require("os")
+//const { MocciLogging } = require('../utils/moccilogger')
 
 const hostname = os.hostname()
 const platform = os.platform()

@@ -70,10 +70,6 @@ client.on('interactionCreate', async interaction => {
     }
 })
 
-client.on('messageDelete', message => {
-    debug(`Message deleted: ${message}`)
-})
-
 //Logging
 function debug(txt) {
     log(txt, 1)

@@ -52,7 +52,7 @@ client.once('ready', () => {
             if (error) console.error(error);
         }
     })();
-    client.user.setActivity('UNGE', { type: 'STREAMING', name: 'unge', url: 'https://go.khuirulhuda.my.id/discord' })
+    client.user.setActivity('UNGE', { type: 'STREAMING', name: 'khuirul_huda', url: 'https://khuirulhuda.my.id/' })
     log('Listening to interactions.....', 2)
 });
 
@@ -69,6 +69,7 @@ client.on('interactionCreate', async interaction => {
         await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true })
     }
 })
+
 //Aliases
 function debug(msg) {
 MocciLogging.log(msg, MocciLogging.DEBUG)

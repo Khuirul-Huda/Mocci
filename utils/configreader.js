@@ -1,34 +1,37 @@
 class Config {
-
-    //Database Section
-    static FirebaseBucket() {
-        return process.env.FIREBASE_STORAGE_BUCKET
+    // Database Section
+    static get firebaseBucket() {
+        return process.env.FIREBASE_STORAGE_BUCKET || '';
     }
-    static FirebaseApiKey() {
-        return process.env.FIREBASE_API_KEY
+    static get firebaseApiKey() {
+        return process.env.FIREBASE_API_KEY || '';
     }
-    static FirebaseDatabaseUrl() {
-        return process.env.FIREBASE_DATABASE_URL
+    static get firebaseDatabaseUrl() {
+        return process.env.FIREBASE_DATABASE_URL || '';
     }
-    static FirebaseAuthDomain() {
-        return process.env.FIREBASE_AUTH_DOMAIN
+    static get firebaseAuthDomain() {
+        return process.env.FIREBASE_AUTH_DOMAIN || '';
     }
-    //General config
-    static debugMode() {
-        return (process.env.DEBUG === 0) ? false : true
+    // General config
+    static get debugMode() {
+        return process.env.DEBUG === '1' || process.env.DEBUG === 'true';
     }
-    static botToken() {
-        return (process.env.BOT_TOKEN === '') ? null : process.env.BOT_TOKEN
+    static get botToken() {
+        return process.env.BOT_TOKEN || null;
     }
-    static testGuildId() {
-        return (process.env.TEST_GUILD_ID === '') ? null : process.env.TEST_GUILD_ID
+    static get testGuildId() {
+        const val = process.env.TEST_GUILD_ID;
+        if (!val || val === 'optional') return null;
+        return val;
     }
-    static allowShellExecution() {
-        return process.env.ALLOW_SHELL_EXEC
+    static get allowShellExecution() {
+        return process.env.ALLOW_SHELL_EXEC === 'true' || process.env.ALLOW_SHELL_EXEC === '1';
     }
-
+    static validateEnv() {
+        if (!this.botToken) throw new Error('BOT_TOKEN is required in environment variables.');
+    }
 }
 
 module.exports = {
     Config
-}
+};

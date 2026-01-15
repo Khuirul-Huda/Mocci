@@ -1,48 +1,43 @@
-require('colors')
 
-const isdebug = (process.env.DEBUG === 1 ) ? true : false
+require('colors');
 
 class MocciLogging {
-
-    constructor() {
-        MocciLogging.log('MocciLogging Created', MocciLogging.DEBUG)
-    }
-
-    static get DEBUG() {
-        return 1
-    }
-
-    static get INFO() {
-        return 2
-    }
-    static get WARN() {
-        return 3
-    }
-    static get CRITICAL() {
-        return 4
-    }
+    static get DEBUG() { return 1; }
+    static get INFO() { return 2; }
+    static get WARN() { return 3; }
+    static get CRITICAL() { return 4; }
     static get isDEBUG() {
-        return isdebug
+        return process.env.DEBUG === '1' || process.env.DEBUG === 'true';
     }
 
     /**
-     * 
-     * @param {text} message 
-     * @param {number} level 
-     * @returns 
+     * Log a message with a given level.
+     * @param {string} message
+     * @param {number} level
      */
-    static log(message, level = 2) {
-        if (level > 4 || level <= 0) return
-        const prefix = (level == 1) ? '[DEBUG]' : (level == 2) ? '[INFO]' : (level == 3) ? '[WARN]' : '[CRITICAL]'
-        const separator = ' '
-        const output = prefix + separator + message
-        if (level == 1 && isdebug == 0) return
-        console.log((level == 1) ? output.white : (level == 2) ? output.blue : (level == 3) ? output.yellow : output.red)
+    static log(message, level = MocciLogging.INFO) {
+        if (level > 4 || level <= 0) return;
+        const prefix =
+            level === MocciLogging.DEBUG ? '[DEBUG]' :
+            level === MocciLogging.INFO ? '[INFO]' :
+            level === MocciLogging.WARN ? '[WARN]' : '[CRITICAL]';
+        const output = `${prefix} ${message}`;
+        if (level === MocciLogging.DEBUG && !MocciLogging.isDEBUG) return;
+        switch (level) {
+            case MocciLogging.DEBUG:
+                console.log(output.white); break;
+            case MocciLogging.INFO:
+                console.log(output.blue); break;
+            case MocciLogging.WARN:
+                console.log(output.yellow); break;
+            case MocciLogging.CRITICAL:
+                console.log(output.red); break;
+            default:
+                console.log(output);
+        }
     }
-    
-    
 }
 
 module.exports = {
     MocciLogging
-}
+};

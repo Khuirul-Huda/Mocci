@@ -1,8 +1,7 @@
 /* eslint-disable no-unused-vars */
-const { SlashCommandBuilder, SlashCommandStringOption } = require('@discordjs/builders');
-const { MessageEmbed } = require('discord.js');
-const Enchant = require("enchantment-table")
-let hide = false
+const { SlashCommandBuilder } = require('@discordjs/builders');
+const { EmbedBuilder } = require('discord.js');
+const Enchant = require('enchantment-table');
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('enchant')
@@ -17,22 +16,24 @@ module.exports = {
 
 		),
 	async execute(interaction) {
-
-		let isReverse = false
-			isReverse = interaction.options.data.find(dibalik => dibalik.name === 'reverse').value
-		const untranslatedText = interaction.options.data.find(arg => arg.name === 'text').value
-		let translatedText = Enchant.translate(untranslatedText, isReverse)
-
-		if (translatedText === "") {
-			let translatedText = "We need something to reply"
-			let hide = true
+		try {
+			const textOpt = interaction.options.getString('text');
+			const reverseOpt = interaction.options.getBoolean('reverse');
+			if (!textOpt) {
+				await interaction.reply({ content: 'Text is required.', flags: 1 << 6 });
+				return;
+			}
+			const translatedText = Enchant.translate(textOpt, reverseOpt);
+			const embed = new EmbedBuilder()
+				.setTitle('Result')
+				.setDescription(translatedText || 'We need something to reply')
+				.setColor('Green');
+			await interaction.reply({
+				content: "Here's translated text. Please note that currently we can't include number for translations",
+				embeds: [embed]
+			});
+		} catch (error) {
+			await interaction.reply({ content: 'Error translating text.', flags: 1 << 6 });
 		}
-
-		const embed = new MessageEmbed()
-			.setTitle('Result')
-			.setDescription(translatedText)
-			.setColor('GREEN')
-
-		interaction.reply({ content: "Here's translated text. Please note that currently we can't include number for translations", ephemeral: hide, embeds: [embed] })
 	}
 };

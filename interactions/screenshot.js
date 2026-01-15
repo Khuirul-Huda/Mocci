@@ -1,6 +1,5 @@
-const { SlashCommandBuilder } = require('@discordjs/builders')
-const engine = require('puppeteer')
-let msg = "Ini kak"
+const { SlashCommandBuilder } = require('@discordjs/builders');
+const engine = require('puppeteer');
 const args_n = [
   '--autoplay-policy=user-gesture-required',
   '--disable-background-networking',
@@ -50,34 +49,39 @@ const denyFrom = [
     'https://z.moatads.com',
     'https://cdn.permutive.com']
 module.exports = {
-    data: new SlashCommandBuilder()
-            .setName('screenshot')
-            .setDescription('Take a picture of website')
-            .addStringOption(link => link.setName('url')
-                    .setDescription('URL to screenshot')
-                    .setRequired(true)
-            ),
+  data: new SlashCommandBuilder()
+    .setName('screenshot')
+    .setDescription('Take a picture of website')
+    .addStringOption(link => link.setName('url')
+      .setDescription('URL to screenshot')
+      .setRequired(true)
+    ),
 
-     async execute(interaction){
-        const url = interaction.options.data.find(arg => arg.name === 'url').value
-        interaction.reply({content: 'Bentar lagi masak', ephemeral: false})
-        const browser = await engine.launch({headless: true, args: args_n, userDataDir: './puppeteer/temp'})
-        //const context = browser.createIncognitoBrowserContext()
-        const render = (await browser).newPage()
-await (await render).setRequestInterception(true);
-
-(await render).on('request', (request) => {
-    const url = request.url();
-    if (denyFrom.some((d) => url.startsWith(d))) {
-      request.abort();
-    } else {
-      request.continue();
+  async execute(interaction) {
+    const url = interaction.options.getString('url');
+    if (!url || !/^https?:\/\//.test(url)) {
+      await interaction.reply({ content: 'Please provide a valid URL (must start with http/https).', flags: 1 << 6 });
+      return;
     }
-  });
-        await (await render).goto(url).catch(err => msg = "Ini Kak")
-        const pic = await (await render).screenshot()
-       const y = (await browser).close()
-         await interaction.editReply({content: msg,  files: [pic], ephemeral: false})
-	
-}  
-}
+  await interaction.reply({ content: 'Processing screenshot...' });
+    try {
+      const browser = await engine.launch({ headless: true, args: args_n, userDataDir: './puppeteer/temp' });
+      const render = await browser.newPage();
+      await render.setRequestInterception(true);
+      render.on('request', (request) => {
+        const reqUrl = request.url();
+        if (denyFrom.some((d) => reqUrl.startsWith(d))) {
+          request.abort();
+        } else {
+          request.continue();
+        }
+      });
+      await render.goto(url, { waitUntil: 'networkidle2', timeout: 20000 });
+      const pic = await render.screenshot();
+      await browser.close();
+            await interaction.editReply({ content: 'Screenshot taken!', files: [pic] });
+    } catch (error) {
+      await interaction.editReply({ content: `Failed to take screenshot. Please check the URL or try again later.\nError: ${error.message}`, flags: 1 << 6 });
+    }
+  }
+};

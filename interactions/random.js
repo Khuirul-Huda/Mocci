@@ -5,6 +5,10 @@ module.exports = {
 		.setName('random')
 		.setDescription('Generate random number'),
 	async execute(interaction) {
-		interaction.reply({ content: 'Todo: soon, tanya huda', ephemeral: true })
+		try {
+			await interaction.reply({ content: 'Todo: soon, tanya huda' });
+		} catch (error) {
+			await interaction.reply({ content: 'Error generating random number.', flags: 1 << 6 });
+		}
 	}
 };

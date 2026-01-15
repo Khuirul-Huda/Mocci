@@ -8,3 +8,5 @@ puppeteer/temp/**
 .vscode
 .idea
 
+utils/aichannels.json
+utils/aimemory.json

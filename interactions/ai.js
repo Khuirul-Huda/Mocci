@@ -43,7 +43,7 @@ module.exports = {
       }
   await interaction.editReply({ content: reply.length > 2000 ? reply.slice(0, 1997) + '...' : reply });
   // Send the original prompt to the sender privately
-  await interaction.user.send(`Your prompt: ${prompt}`);
+//   await interaction.user.send(`Your prompt: ${prompt}`);
     } catch (error) {
   await interaction.editReply({ content: `AI error: ${error.message}` });
   await interaction.user.send(`Your prompt: ${prompt}`);

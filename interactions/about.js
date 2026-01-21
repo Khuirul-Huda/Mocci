@@ -17,54 +17,118 @@ module.exports = {
 
 	async execute(interaction) {
 		try {
-			// Calculate uptime
-			let totalSeconds = os.uptime();
-			let days = Math.floor(totalSeconds / 86400);
-			totalSeconds %= 86400;
-			let hours = Math.floor(totalSeconds / 3600);
-			totalSeconds %= 3600;
-			let minutes = Math.floor(totalSeconds / 60);
-			let seconds = Math.floor(totalSeconds % 60);
+			await interaction.deferReply();
+			const startTime = Date.now();
 
-			const uptime = `${days} Days ${hours} Hours ${minutes} Minutes ${seconds} Seconds`;
-			const freemem = `${(os.freemem() / (1024 ** 3)).toFixed(2)} GB`;
-			const totalmem = `${(os.totalmem() / (1024 ** 3)).toFixed(2)} GB`;
-			const memoryinfo = `${freemem} / ${totalmem}`;
-			const time = Date.now() - interaction.createdTimestamp;
+			// Bot uptime
+			const botUptime = process.uptime();
+			let botDays = Math.floor(botUptime / 86400);
+			let botHours = Math.floor((botUptime % 86400) / 3600);
+			let botMinutes = Math.floor((botUptime % 3600) / 60);
+			let botSeconds = Math.floor(botUptime % 60);
+			const botUptimeStr = `${botDays}d ${botHours}h ${botMinutes}m ${botSeconds}s`;
+
+			// System uptime
+			let totalSeconds = os.uptime();
+			let sysDays = Math.floor(totalSeconds / 86400);
+			let sysHours = Math.floor((totalSeconds % 86400) / 3600);
+			let sysMinutes = Math.floor((totalSeconds % 3600) / 60);
+			let sysSeconds = Math.floor(totalSeconds % 60);
+			const sysUptimeStr = `${sysDays}d ${sysHours}h ${sysMinutes}m ${sysSeconds}s`;
+
+			// Memory info
+			const freemem = (os.freemem() / (1024 ** 3)).toFixed(2);
+			const totalmem = (os.totalmem() / (1024 ** 3)).toFixed(2);
+			const usedmem = (totalmem - freemem).toFixed(2);
+			const memPercentage = ((usedmem / totalmem) * 100).toFixed(1);
 
 			// Bot info
 			const botVersion = pkg.version || 'Unknown';
 			const botAuthor = pkg.author || 'Unknown';
 			const botName = pkg.name || 'Mocci';
-			const botDesc = pkg.description || 'A Discord bot.';
+			const botDesc = pkg.description || 'A Discord bot for developers';
+			const nodeVersion = process.version;
+			const djsVersion = require('discord.js').version;
 
 			// Server info
 			const guild = interaction.guild;
-			const serverName = guild ? guild.name : 'DM';
-			const memberCount = guild ? guild.memberCount : 'N/A';
+			const serverName = guild ? guild.name : 'Direct Message';
+			const memberCount = guild ? guild.memberCount.toLocaleString() : 'N/A';
+			const channelCount = guild ? guild.channels.cache.size.toLocaleString() : 'N/A';
+			const roleCount = guild ? guild.roles.cache.size.toLocaleString() : 'N/A';
 
-			const sysinfo = `**Hostname:** ${hostname}\n**Platform:** ${platform}\n**Header:** ${headerversion}\n**CPU:** ${model} x${cputotal}\n**Memory:** ${memoryinfo}\n**System Uptime:** ${uptime}`;
+			// Bot statistics
+			const totalServers = interaction.client.guilds.cache.size.toLocaleString();
+			const totalUsers = interaction.client.users.cache.size.toLocaleString();
+			const totalChannels = interaction.client.channels.cache.size.toLocaleString();
+			const totalCommands = interaction.client.commands ? interaction.client.commands.size : 'N/A';
+
+			// Calculate accurate response delay
+			const responseDelay = Date.now() - startTime;
+			const wsLatency = interaction.client.ws.ping;
 
 			// Use ADMINISTRATOR permission (8) for full access
 			const permissions = '8';
 			const inviteUrl = `https://discord.com/oauth2/authorize?client_id=${interaction.client.user.id}&permissions=${permissions}&scope=bot%20applications.commands`;
+			
 			const about = new EmbedBuilder()
-				.setColor('#31ff08')
-				.setTitle(`About ${botName}`)
-				.setDescription(`${botDesc}\n\n**Version:** ${botVersion}\n**Author:** ${botAuthor}`)
+				.setColor('#5865F2')
+				.setAuthor({ 
+					name: `${botName} - Bot Information`,
+					iconURL: interaction.client.user.displayAvatarURL({ dynamic: true })
+				})
+				.setDescription(`> ${botDesc}\n\n**📊 Global Statistics**\n\`\`\`yml\nServers: ${totalServers}\nUsers: ${totalUsers}\nChannels: ${totalChannels}\nCommands: ${totalCommands}\`\`\``)
 				.addFields(
-					{ name: 'System Info', value: sysinfo },
-					{ name: 'Server', value: `**Name:** ${serverName}\n**Members:** ${memberCount}` },
-					{ name: 'Response Delay', value: `${time} ms`, inline: true },
-					{ name: 'Source Code', value: '[GitHub](https://github.com/Khuirul-Huda/Mocci)', inline: true },
-					{ name: 'Invite Me', value: `[Invite this bot](${inviteUrl})`, inline: true }
+					{ 
+						name: '📦 Bot Details', 
+						value: `\`\`\`yml\nVersion: ${botVersion}\nAuthor: ${botAuthor}\nNode.js: ${nodeVersion}\nDiscord.js: v${djsVersion}\`\`\``,
+						inline: true
+					},
+					{ 
+						name: '⏱️ Uptime & Latency', 
+						value: `\`\`\`yml\nBot Uptime: ${botUptimeStr}\nWebSocket: ${wsLatency}ms\nResponse: ${responseDelay}ms\`\`\``,
+						inline: true
+					},
+					{ 
+						name: '🖥️ System Information', 
+						value: `\`\`\`yml\nOS: ${platform}\nCPU: ${model}\nCores: ${cputotal}\nHostname: ${hostname}\`\`\``,
+						inline: false
+					},
+					{ 
+						name: '💾 Memory Usage', 
+						value: `\`\`\`yml\nUsed: ${usedmem} GB (${memPercentage}%)\nFree: ${freemem} GB\nTotal: ${totalmem} GB\`\`\``,
+						inline: true
+					},
+					{ 
+						name: '⏳ System Uptime', 
+						value: `\`\`\`yml\n${sysUptimeStr}\`\`\``,
+						inline: true
+					},
+					{ 
+						name: '📍 Current Server', 
+						value: `\`\`\`yml\nName: ${serverName}\nMembers: ${memberCount}\nChannels: ${channelCount}\nRoles: ${roleCount}\`\`\``,
+						inline: false
+					}
 				)
-				.setFooter({ text: 'Support us with /support' })
+				.addFields(
+					{ name: '🔗 Links', value: `[GitHub](https://github.com/Khuirul-Huda/Mocci) • [Invite Bot](${inviteUrl}) • [Support](/support)`, inline: false }
+				)
+				.setThumbnail(interaction.client.user.displayAvatarURL({ dynamic: true, size: 256 }))
+				.setFooter({ 
+					text: `Requested by ${interaction.user.tag}`,
+					iconURL: interaction.user.displayAvatarURL({ dynamic: true })
+				})
 				.setTimestamp();
 
-			await interaction.reply({ embeds: [about] });
+			await interaction.editReply({ embeds: [about] });
 		} catch (error) {
-			await interaction.reply({ content: 'Error displaying about info.', flags: 1 << 6 });
+			console.error('Error in /about command:', error);
+			const errorReply = { content: '❌ Error displaying about information.', ephemeral: true };
+			if (interaction.deferred) {
+				await interaction.editReply(errorReply);
+			} else {
+				await interaction.reply(errorReply);
+			}
 		}
 	}
 };

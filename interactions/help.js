@@ -1,43 +1,47 @@
-
-const { SlashCommandBuilder } = require('@discordjs/builders');
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 
 module.exports = {
-	data: new SlashCommandBuilder()
-		.setName('help')
-		.setDescription('Shows all commands'),
-	async execute(interaction) {
-		try {
-			const commands = interaction.client.commands;
-			const botUser = interaction.client.user;
-			const embed = new EmbedBuilder()
-				.setTitle('🤖 Mocci Bot Help')
-				.setColor(0x5865F2)
-				.setThumbnail(botUser.displayAvatarURL())
-				.setDescription('Welcome to Mocci! Here are my available commands:')
-				.addFields(
-					{ name: 'General', value: commands.filter(cmd => ['about','help','avatar','userinfo','serverinfo','ai','quote','weather'].includes(cmd.data.name)).map(cmd => `</${cmd.data.name}:${cmd.data.name}> — ${cmd.data.description}`).join('\n') || 'None' },
-					{ name: 'Fun & Utility', value: commands.filter(cmd => ['random','enchant','poll','screenshot'].includes(cmd.data.name)).map(cmd => `</${cmd.data.name}:${cmd.data.name}> — ${cmd.data.description}`).join('\n') || 'None' },
-					{ name: 'Admin/Owner', value: commands.filter(cmd => ['setactivity'].includes(cmd.data.name)).map(cmd => `</${cmd.data.name}:${cmd.data.name}> — ${cmd.data.description}`).join('\n') || 'None' }
-				)
-				.setFooter({ text: 'Tip: Use /<command> for details. Need help? Contact the bot owner.' });
+    data: new SlashCommandBuilder()
+        .setName('help')
+        .setDescription('Get a list of all commands'),
+    async execute(interaction) {
+        try {
+            const embed = new EmbedBuilder()
+                .setTitle('🤖 Mocci Bot - Ultimate Programmer\'s Assistant')
+                .setDescription('Here are all available commands organized by category:')
+                .setColor(0x5865f2)
+                .addFields(
+                    { name: '💻 Code Execution', value: '`/run` `/explain` `/format` `/regex` `/leetcode` `/cron`', inline: false },
+                    { name: '📚 Documentation', value: '`/docs` `/npm` `/pypi` `/github` `/stackoverflow`', inline: false },
+                    { name: '🛠️ Developer Tools', value: '`/json` `/base64` `/hash` `/uuid` `/paste` `/snippet` `/commit`', inline: false },
+                    { name: '🎖️ Leveling & XP', value: '`/rank` `/leaderboard` - Earn XP by chatting!', inline: false },
+                    { name: '⚖️ Moderation', value: '`/warn` `/warnings` `/clearwarnings` `/modlogs`', inline: false },
+                    { name: '🎉 Community', value: '`/starboard` `/giveaway` `/welcome` `/afk`', inline: false },
+                    { name: '🤖 AI Features', value: '`/ai` `/setaichannel` - AI chat with memory', inline: false },
+                    { name: '📊 Server Info', value: '`/serverstats` `/serverinfo` `/userinfo` `/about` `/dbstatus`', inline: false },
+                    { name: '🎮 Fun & Entertainment', value: '`/joke` `/cat` `/dog` `/meme` `/anime` `/advice` `/trivia` `/8ball` `/quote` `/weather` `/poll` `/random` `/enchant`', inline: false },
+                    { name: '🖼️ Media', value: '`/avatar` `/screenshot`', inline: false },
+                    { name: '⚙️ Admin', value: '`/setactivity` `/reload` (Owner only)', inline: false }
+                )
+                .setFooter({ text: 'Mocci v3.0' })
+                .setTimestamp();
 
-			// 8 = ADMINISTRATOR, grants all permissions
-			const inviteUrl = `https://discord.com/oauth2/authorize?client_id=${botUser.id}&permissions=8&scope=bot%20applications.commands`;
-			const row = new ActionRowBuilder().addComponents(
-				new ButtonBuilder()
-					.setLabel('Invite Mocci')
-					.setStyle(ButtonStyle.Link)
-					.setURL(inviteUrl),
-				new ButtonBuilder()
-					.setLabel('Support Server')
-					.setStyle(ButtonStyle.Link)
-					.setURL('https://go.khuirulhuda.my.id/discord')
-			);
+            const row = new ActionRowBuilder()
+                .addComponents(
+                    new ButtonBuilder()
+                        .setLabel('Invite Bot')
+                        .setStyle(ButtonStyle.Link)
+                        .setURL(`https://discord.com/api/oauth2/authorize?client_id=${interaction.client.user.id}&permissions=8&scope=bot%20applications.commands`),
+                    new ButtonBuilder()
+                        .setLabel('Support Server')
+                        .setStyle(ButtonStyle.Link)
+                        .setURL(process.env.SUPPORT_SERVER_URL)
+                );
 
-			await interaction.reply({ embeds: [embed], components: [row] });
-		} catch (error) {
-			await interaction.reply({ content: 'Error displaying help.', flags: 1 << 6 });
-		}
-	}
+            await interaction.reply({ embeds: [embed], components: [row] });
+        } catch (error) {
+            console.error('Help error:', error);
+            await interaction.reply({ content: 'Error displaying help.', flags: 1 << 6 });
+        }
+    }
 };

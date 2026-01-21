@@ -1,8 +1,5 @@
 const { SlashCommandBuilder, ChannelType } = require('discord.js');
-const fs = require('fs');
-const path = require('path');
-
-const aichannelsPath = path.join(__dirname, '../utils/aichannels.json');
+const DB = require('../utils/db');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -24,12 +21,13 @@ module.exports = {
       return;
     }
     const channel = interaction.options.getChannel('channel');
-    let aichannels = {};
-    if (fs.existsSync(aichannelsPath)) {
-      aichannels = JSON.parse(fs.readFileSync(aichannelsPath, 'utf8'));
+    
+    try {
+      await DB.setAIChannel(interaction.guild.id, channel.id);
+      await interaction.reply({ content: `AI chat channel set to <#${channel.id}>.` });
+    } catch (error) {
+      console.error('Error setting AI channel:', error);
+      await interaction.reply({ content: 'Failed to set AI channel. Please try again.', flags: 1 << 6 });
     }
-    aichannels[interaction.guild.id] = channel.id;
-    fs.writeFileSync(aichannelsPath, JSON.stringify(aichannels, null, 2));
-    await interaction.reply({ content: `AI chat channel set to <#${channel.id}>.` });
   }
 };

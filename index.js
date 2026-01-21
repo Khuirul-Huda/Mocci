@@ -12,7 +12,16 @@ dotenv.config();
 
 // ...existing code...
 const commands = [];
-const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
+const client = new Client({ 
+    intents: [
+        GatewayIntentBits.Guilds, 
+        GatewayIntentBits.GuildMessages, 
+        GatewayIntentBits.MessageContent,
+        GatewayIntentBits.GuildMessageReactions,
+        GatewayIntentBits.GuildMembers
+    ],
+    partials: ['MESSAGE', 'CHANNEL', 'REACTION']
+});
 client.commands = new Collection();
 
 // Utility logging
@@ -34,42 +43,108 @@ for (const file of commandFiles) {
     }
 }
 
-// AI channel and memory paths
-const aichannelsPath = path.join(__dirname, 'utils/aichannels.json');
-const aimemoryPath = path.join(__dirname, 'utils/aimemory.json');
+const DB = require('./utils/db');
+
+// XP cooldown map
+const xpCooldowns = new Map();
 
 // Listen for messages in AI channels and auto-reply with AI
 client.on(Events.MessageCreate, async (message) => {
     if (message.author.bot || !message.guild) return;
-    // Load AI channel config
-    let aichannels = {};
-    if (fs.existsSync(aichannelsPath)) {
-        aichannels = JSON.parse(fs.readFileSync(aichannelsPath, 'utf8'));
-    }
-    const aiChannelId = aichannels[message.guild.id];
-    if (!aiChannelId || message.channel.id !== aiChannelId) return;
-    // Load memory
-    let aimemory = {};
-    if (fs.existsSync(aimemoryPath)) {
-        aimemory = JSON.parse(fs.readFileSync(aimemoryPath, 'utf8'));
-    }
-        const memKey = `${message.guild.id}:${aiChannelId}`;
-        if (!aimemory[memKey]) aimemory[memKey] = [];
-        const now = Date.now();
-        // Purge expired memory for all users and channels
-        for (const key in aimemory) {
-            aimemory[key] = aimemory[key].filter(m => (now - m.timestamp) <= 3600000);
+    
+    // XP System - Award XP for messages (with cooldown)
+    const cooldownKey = `${message.guild.id}-${message.author.id}`;
+    const lastXP = xpCooldowns.get(cooldownKey);
+    const now = Date.now();
+    
+    if (!lastXP || now - lastXP > 60000) { // 1 minute cooldown
+        xpCooldowns.set(cooldownKey, now);
+        
+        try {
+            const xpGain = Math.floor(Math.random() * 15) + 10; // 10-25 XP per message
+            const result = await DB.addXP(message.guild.id, message.author.id, xpGain);
+            
+            // Level up notification
+            if (result.leveledUp) {
+                const levelUpEmbed = new (require('discord.js').EmbedBuilder)()
+                    .setTitle('🎉 Level Up!')
+                    .setDescription(`Congratulations ${message.author}! You've reached **Level ${result.level}**!`)
+                    .setColor(0xffd700)
+                    .setTimestamp();
+                
+                await message.channel.send({ embeds: [levelUpEmbed] });
+            }
+        } catch (error) {
+            // Silently ignore table not found errors (PGRST205)
+            if (error.code !== 'PGRST205') {
+                console.error('XP error:', error);
+            }
         }
-        // Add user message with timestamp and user id
-        aimemory[memKey].push({ role: 'user', content: message.content, user: message.author.id, timestamp: now });
-        // Only keep messages from the last hour and from this user
-        aimemory[memKey] = aimemory[memKey].filter(m => m.user === message.author.id && (now - m.timestamp) <= 3600000);
+    }
+
+    // AFK System - Check for mentions
+    if (message.mentions.users.size > 0) {
+        for (const [userId, user] of message.mentions.users) {
+            if (user.bot) continue;
+            
+            try {
+                const afkData = await DB.getAFK(userId);
+                if (afkData) {
+                    const afkTime = new Date(afkData.set_at);
+                    const duration = Math.floor((now - afkTime.getTime()) / 1000 / 60);
+                    await message.reply(`💤 ${user.username} is currently AFK: ${afkData.message}\n*AFK for ${duration} minutes*`);
+                }
+            } catch (error) {
+                // Silently ignore table not found errors
+                if (error.code !== 'PGRST205') {
+                    console.error('AFK check error:', error);
+                }
+            }
+        }
+    }
+
+    // Remove AFK status if user sends a message
+    try {
+        const afkData = await DB.getAFK(message.author.id);
+        if (afkData) {
+            await DB.removeAFK(message.author.id);
+            await message.reply(`Welcome back! Your AFK status has been removed.`).then(msg => {
+                setTimeout(() => msg.delete().catch(() => {}), 5000);
+            });
+        }
+    } catch (error) {
+        // Silently ignore table not found errors
+        if (error.code !== 'PGRST205') {
+            console.error('AFK removal error:', error);
+        }
+    }
+    
+    // Load AI channel config from Supabase
+    try {
+        const aiChannelId = await DB.getAIChannel(message.guild.id);
+        if (!aiChannelId || message.channel.id !== aiChannelId) return;
+    } catch (error) {
+        // Silently ignore table not found errors
+        if (error.code !== 'PGRST205') {
+            console.error('AI channel check error:', error);
+        }
+        return;
+    }
+    
     // Call AI
     const apiKey = process.env.OPENROUTER_API_KEY;
     if (!apiKey) return message.reply('AI API key is not configured.');
+    
     let sentMsg;
     try {
         sentMsg = await message.reply('Thinking... Please wait.');
+        
+        // Clean old memory periodically
+        await DB.cleanOldAIMemory(3600000);
+        
+        // Get conversation history from Supabase
+        const memory = await DB.getAIMemory(message.guild.id, aiChannelId, message.author.id, 3600000);
+        
         const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
             method: 'POST',
             headers: {
@@ -80,22 +155,26 @@ client.on(Events.MessageCreate, async (message) => {
                 model: 'xiaomi/mimo-v2-flash:free',
                 messages: [
                   { role: 'system', content: 'You are MocciAI, a helpful, friendly, and informative Discord bot assistant. Always respond concisely and keep your answer under 2000 characters.' },
-                  ...aimemory[memKey].map(m => ({ role: m.role, content: m.content }))
+                  ...memory.map(m => ({ role: m.role, content: m.content })),
+                  { role: 'user', content: message.content }
                 ],
                 reasoning: { enabled: false }
             })
         });
+        
         const result = await response.json();
         const aiMsg = result.choices?.[0]?.message;
         if (!aiMsg) throw new Error('No AI response.');
+        
         let reply = aiMsg.content;
-        // Add AI message to memory with timestamp and user id
-        aimemory[memKey].push({ role: 'assistant', content: aiMsg.content, user: message.author.id, timestamp: now });
-        // Only keep messages from the last hour and from this user
-        aimemory[memKey] = aimemory[memKey].filter(m => m.user === message.author.id && (now - m.timestamp) <= 3600000);
-        fs.writeFileSync(aimemoryPath, JSON.stringify(aimemory, null, 2));
+        
+        // Save messages to Supabase
+        await DB.saveAIMessage(message.guild.id, aiChannelId, message.author.id, 'user', message.content);
+        await DB.saveAIMessage(message.guild.id, aiChannelId, message.author.id, 'assistant', aiMsg.content);
+        
         await sentMsg.edit(reply.length > 2000 ? reply.slice(0, 1997) + '...' : reply);
     } catch (error) {
+        console.error('AI error:', error);
         if (sentMsg) {
             await sentMsg.edit('AI error: ' + error.message);
         } else {
@@ -104,14 +183,135 @@ client.on(Events.MessageCreate, async (message) => {
     }
 });
 
+// Starboard - Reaction listener
+client.on(Events.MessageReactionAdd, async (reaction, user) => {
+    if (user.bot) return;
+    
+    // Fetch partial messages
+    if (reaction.partial) {
+        try {
+            await reaction.fetch();
+        } catch (error) {
+            console.error('Error fetching reaction:', error);
+            return;
+        }
+    }
 
+    if (reaction.emoji.name === '⭐') {
+        const message = reaction.message;
+        if (!message.guild) return;
+
+        const starboardChannelId = client.starboardChannels?.get(message.guild.id);
+        if (!starboardChannelId) return;
+
+        try {
+            await DB.addStar(
+                message.guild.id,
+                message.id,
+                message.channel.id,
+                message.author.id,
+                message.content
+            );
+
+            const starData = await DB.getStarboardMessage(message.id);
+            const starboardChannel = message.guild.channels.cache.get(starboardChannelId);
+
+            if (starboardChannel && starData.star_count >= 3) { // Require 3 stars
+                const { EmbedBuilder } = require('discord.js');
+                const embed = new EmbedBuilder()
+                    .setAuthor({ name: message.author.tag, iconURL: message.author.displayAvatarURL() })
+                    .setDescription(message.content || '[No content]')
+                    .addFields(
+                        { name: 'Source', value: `[Jump to message](${message.url})`, inline: true },
+                        { name: 'Channel', value: `${message.channel}`, inline: true },
+                        { name: 'Stars', value: `⭐ ${starData.star_count}`, inline: true }
+                    )
+                    .setColor(0xffd700)
+                    .setTimestamp(message.createdAt);
+
+                if (message.attachments.size > 0) {
+                    const attachment = message.attachments.first();
+                    if (attachment.contentType?.startsWith('image')) {
+                        embed.setImage(attachment.url);
+                    }
+                }
+
+                if (starData.starboard_message_id) {
+                    // Update existing starboard message
+                    try {
+                        const starboardMsg = await starboardChannel.messages.fetch(starData.starboard_message_id);
+                        await starboardMsg.edit({ embeds: [embed] });
+                    } catch {}
+                } else {
+                    // Create new starboard message
+                    const starboardMsg = await starboardChannel.send({ embeds: [embed] });
+                    await DB.updateStarboardMessageId(message.id, starboardMsg.id);
+                }
+            }
+        } catch (error) {
+            // Silently ignore table not found errors
+            if (error.code !== 'PGRST205') {
+                console.error('Starboard error:', error);
+            }
+        }
+    }
+});
+
+client.on(Events.MessageReactionRemove, async (reaction, user) => {
+    if (user.bot) return;
+    
+    if (reaction.partial) {
+        try {
+            await reaction.fetch();
+        } catch (error) {
+            return;
+        }
+    }
+
+    if (reaction.emoji.name === '⭐') {
+        const message = reaction.message;
+        if (!message.guild) return;
+
+        try {
+            await DB.removeStar(message.id);
+        } catch (error) {
+            // Silently ignore table not found errors
+            if (error.code !== 'PGRST205') {
+                console.error('Starboard remove error:', error);
+            }
+        }
+    }
+});
+
+// Welcome System - Member join listener
+client.on(Events.GuildMemberAdd, async (member) => {
+    const welcomeModule = require('./interactions/welcome');
+    await welcomeModule.sendWelcomeMessage(client, member.guild, member);
+});
 
 const TOKEN = process.env.BOT_TOKEN;
 const TEST_GUILD_ID = process.env.TEST_GUILD_ID || '';
+const { initializeSchema } = require('./utils/schema-init');
+const { restoreActivity } = require('./interactions/setactivity');
 // ...existing code...
 
 client.once(Events.ClientReady, async () => {
     log(`Bot ready as ${client.user.tag}`, MocciLogging.INFO);
+    
+    // Auto-initialize database schema if needed
+    try {
+        await initializeSchema();
+    } catch (error) {
+        log(`Schema initialization check failed: ${error.message}`, MocciLogging.WARN);
+    }
+    
+    // Restore bot activity from database
+    try {
+        await restoreActivity(client);
+    } catch (error) {
+        // Silently ignore - activity restoration is optional
+    }
+    
     const CLIENT_ID = client.user.id;
     const rest = new REST({ version: '9' }).setToken(TOKEN);
     try {
@@ -142,12 +342,20 @@ client.on(Events.InteractionCreate, async interaction => {
         await command.execute(interaction);
     } catch (error) {
         log(`Error executing command ${interaction.commandName}: ${error}`, MocciLogging.CRITICAL);
-        // Always send error as ephemeral (only sender can see)
-        const errorMsg = { content: 'There was an error while executing this command!', flags: 1 << 6 };
-        if (interaction.replied || interaction.deferred) {
-            await interaction.followUp(errorMsg);
-        } else {
-            await interaction.reply(errorMsg);
+        
+        // Only send error message if interaction hasn't been handled
+        try {
+            const errorMsg = { content: 'There was an error while executing this command!', flags: 1 << 6 };
+            
+            if (interaction.deferred) {
+                await interaction.editReply(errorMsg);
+            } else if (!interaction.replied) {
+                await interaction.reply(errorMsg);
+            }
+            // If already replied, don't send anything (command handled its own error)
+        } catch (replyError) {
+            // Silently fail if we can't send the error message
+            console.error('Failed to send error message:', replyError.message);
         }
     }
 });
